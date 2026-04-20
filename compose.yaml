@@ -1,10 +1,19 @@
 services:
-  mysql:
-    image: 'mysql:latest'
-    environment:
-      - 'MYSQL_DATABASE=mydatabase'
-      - 'MYSQL_PASSWORD=secret'
-      - 'MYSQL_ROOT_PASSWORD=verysecret'
-      - 'MYSQL_USER=myuser'
+  db:
+    image: mysql:8.0
+    container_name: product-mysql
     ports:
-      - '3306'
+      - "3306:3306"
+    environment:
+      # L'erreur venait de l'absence de cette ligne :
+      - MYSQL_ROOT_PASSWORD=1122
+
+      # On crée aussi la base et l'utilisateur pour l'appli directement ici
+      - MYSQL_DATABASE=product_db
+      - MYSQL_USER=user
+      - MYSQL_PASSWORD=password
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data:

@@ -11,3 +11,10 @@ logging:
   level:
     root: INFO
     com.maryam: INFO
+
+# application-prod.yml
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false

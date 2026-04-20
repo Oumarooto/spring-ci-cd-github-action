@@ -1,9 +1,9 @@
 services:
   db:
     image: mysql:8.0
-    container_name: product-mysql
+    container_name: devops-product-mysql
     ports:
-      - "3306:3306"
+      - "3307:3306"
     environment:
       # L'erreur venait de l'absence de cette ligne :
       - MYSQL_ROOT_PASSWORD=1122
@@ -11,7 +11,7 @@ services:
       # On crée aussi la base et l'utilisateur pour l'appli directement ici
       - MYSQL_DATABASE=product_db
       - MYSQL_USER=user
-      - MYSQL_PASSWORD=password
+      - MYSQL_PASSWORD=1122
     volumes:
       - mysql_data:/var/lib/mysql
 

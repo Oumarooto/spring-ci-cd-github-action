@@ -11,6 +11,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Important pour Sonar : permet une analyse précise de l'historique
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -19,39 +21,105 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      # ÉTAPE CLÉ : On nettoie TOUT (Username et Version) pour Dockers
+      # 1. Extraction des métadonnées (Ta partie qui marche !)
       - name: Prepare Metadata
         id: meta
         run: |
-          # 1. Version du pom.xml
-          RAW_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
-          # 2. Nettoyage : Passage en minuscules (Docker n'accepte pas les majuscules dans le repo)
+          RAW_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout | tr -d '\n' | tr -d '\r')
           CLEAN_USER=$(echo "${{ secrets.DOCKERHUB_USERNAME }}" | tr '[:upper:]' '[:lower:]')
-          
           echo "owner=${CLEAN_USER}" >> $GITHUB_OUTPUT
           echo "version=${RAW_VERSION}" >> $GITHUB_OUTPUT
           echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
-      - name: Build Package
-        run: mvn clean package -Pprod -DskipTests
+      # 2. Build + Analyse Sonar (On fait les deux en une commande pour optimiser le temps)
+      - name: Build and Analyze with Sonar
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Nécessaire pour Sonar
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          mvn clean verify sonar:sonar \
+            -Pprod \
+            -Dsonar.projectKey=spring-ci-cd-github-action \
+            -Dsonar.projectName='Spring Product Service' \
+            -Dsonar.host.url=https://sonarcloud.io
 
+      # 3. Setup Docker (Buildx)
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      # 4. Connexion Docker Hub
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      # 5. Build Image Docker et Push
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          # On utilise les variables nettoyées (outputs de l'étape 'meta')
           tags: |
             ${{ steps.meta.outputs.owner }}/product-service:${{ steps.meta.outputs.version }}
             ${{ steps.meta.outputs.owner }}/product-service:${{ steps.meta.outputs.sha_short }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+#name: Publish to Docker Hub
+#
+#on:
+#  push:
+#    branches: [ "main" ]
+#
+#jobs:
+#  build-and-push:
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#      - name: Checkout code
+#        uses: actions/checkout@v4
+#
+#      - name: Set up JDK 21
+#        uses: actions/setup-java@v4
+#        with:
+#          java-version: '21'
+#          distribution: 'temurin'
+#          cache: maven
+#
+#      # ÉTAPE CLÉ : On nettoie TOUT (Username et Version) pour Dockers
+#      - name: Prepare Metadata
+#        id: meta
+#        run: |
+#          # 1. Version du pom.xml
+#          RAW_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+#          # 2. Nettoyage : Passage en minuscules (Docker n'accepte pas les majuscules dans le repo)
+#          CLEAN_USER=$(echo "${{ secrets.DOCKERHUB_USERNAME }}" | tr '[:upper:]' '[:lower:]')
+#
+#          echo "owner=${CLEAN_USER}" >> $GITHUB_OUTPUT
+#          echo "version=${RAW_VERSION}" >> $GITHUB_OUTPUT
+#          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+#
+#      - name: Build Package
+#        run: mvn clean package -Pprod -DskipTests
+#
+#      - name: Set up Docker Buildx
+#        uses: docker/setup-buildx-action@v3
+#
+#      - name: Login to Docker Hub
+#        uses: docker/login-action@v3
+#        with:
+#          username: ${{ secrets.DOCKERHUB_USERNAME }}
+#          password: ${{ secrets.DOCKERHUB_TOKEN }}
+#
+#      - name: Build and push
+#        uses: docker/build-push-action@v5
+#        with:
+#          context: .
+#          push: true
+#          # On utilise les variables nettoyées (outputs de l'étape 'meta')
+#          tags: |
+#            ${{ steps.meta.outputs.owner }}/product-service:${{ steps.meta.outputs.version }}
+#            ${{ steps.meta.outputs.owner }}/product-service:${{ steps.meta.outputs.sha_short }}
+#          cache-from: type=gha
+#          cache-to: type=gha,mode=max

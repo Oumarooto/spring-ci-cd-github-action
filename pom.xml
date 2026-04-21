@@ -180,7 +180,7 @@
 						<artifactId>spring-boot-maven-plugin</artifactId>
 						<configuration>
 							<image>
-								<name>maryam/${project.artifactId}:latest</name>
+								<name>docker.io/${docker.username}/product-service:latest</name>
 							</image>
 						</configuration>
 					</plugin>

@@ -2,7 +2,7 @@ name: Publish to Docker Hub
 
 on:
   push:
-    branches: [ "main" ] # Déclenchement automatique sur la branche main
+    branches: [ "main" ]
 
 jobs:
   build-and-push:
@@ -19,7 +19,20 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Build Package (Skip Tests pour la rapidité du push)
+      # 1. Extraction de la version du pom.xml et nettoyage du username
+      - name: Prepare Metadata
+        id: meta
+        run: |
+          # Extrait la version (ex: 0.0.1-SNAPSHOT)
+          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          # Nettoie le username en minuscules
+          USER=$(echo "${{ secrets.DOCKERHUB_USERNAME }}" | tr '[:upper:]' '[:lower:]')
+          
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "owner=${USER}" >> $GITHUB_OUTPUT
+          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Build Package
         run: mvn clean package -Pprod -DskipTests
 
       - name: Set up Docker Buildx
@@ -31,11 +44,14 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      # 2. Build et Push avec des tags précis
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/product-service:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/product-service:${{ github.sha }}
+            ${{ steps.meta.outputs.owner }}/product-service:${{ steps.meta.outputs.version }}
+            ${{ steps.meta.outputs.owner }}/product-service:${{ steps.meta.outputs.sha_short }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

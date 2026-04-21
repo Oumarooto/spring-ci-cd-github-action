@@ -2,21 +2,21 @@ spring:
   application:
     name: product-service
   profiles:
-    active: @spring.profiles.active@ # Injecté par Maven lors du build
+    active: @spring.profiles.active@
 
 server:
   port: 9095
-  shutdown: graceful # Arrêt propre pour le CI/CD
+  shutdown: graceful
 
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus # Pour le monitoring ELK/Grafana
+        include: health,info,metrics,prometheus
 
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
-    operations-sorter: method # Trie les méthodes par GET, POST, etc.
+    operations-sorter: method
   api-docs:
     path: /v3/api-docs

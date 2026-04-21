@@ -19,7 +19,7 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      # ÉTAPE CLÉ : On nettoie TOUT (Username et Version) pour Docker
+      # ÉTAPE CLÉ : On nettoie TOUT (Username et Version) pour Dockers
       - name: Prepare Metadata
         id: meta
         run: |

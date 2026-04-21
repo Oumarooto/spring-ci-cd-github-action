@@ -19,17 +19,17 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      # 1. Extraction de la version du pom.xml et nettoyage du username
+      # ÉTAPE CLÉ : On nettoie TOUT (Username et Version) pour Docker
       - name: Prepare Metadata
         id: meta
         run: |
-          # Extrait la version (ex: 0.0.1-SNAPSHOT)
-          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
-          # Nettoie le username en minuscules
-          USER=$(echo "${{ secrets.DOCKERHUB_USERNAME }}" | tr '[:upper:]' '[:lower:]')
+          # 1. Version du pom.xml
+          RAW_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          # 2. Nettoyage : Passage en minuscules (Docker n'accepte pas les majuscules dans le repo)
+          CLEAN_USER=$(echo "${{ secrets.DOCKERHUB_USERNAME }}" | tr '[:upper:]' '[:lower:]')
           
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
-          echo "owner=${USER}" >> $GITHUB_OUTPUT
+          echo "owner=${CLEAN_USER}" >> $GITHUB_OUTPUT
+          echo "version=${RAW_VERSION}" >> $GITHUB_OUTPUT
           echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
       - name: Build Package
@@ -44,12 +44,12 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # 2. Build et Push avec des tags précis
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
+          # On utilise les variables nettoyées (outputs de l'étape 'meta')
           tags: |
             ${{ steps.meta.outputs.owner }}/product-service:${{ steps.meta.outputs.version }}
             ${{ steps.meta.outputs.owner }}/product-service:${{ steps.meta.outputs.sha_short }}

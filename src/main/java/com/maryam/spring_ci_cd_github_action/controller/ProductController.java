@@ -16,7 +16,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProductController {
 
-    private IProductService productService;
+    private final IProductService productService;
 
     @Operation(summary = "Créer un nouveau produit", description = "Enregistre un produit et génère un log d'audit.")
     @PostMapping
@@ -41,5 +41,13 @@ public class ProductController {
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         productService.deleteProduct(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Mise à jour partielle", description = "Met à jour uniquement les champs fournis.")
+    @PatchMapping("/{id}")
+    public ResponseEntity<ProductDTO> partialUpdate(
+            @PathVariable Long id,
+            @RequestBody ProductDTO productDTO) {
+        return ResponseEntity.ok(productService.updateProduct(id, productDTO));
     }
 }

@@ -2,7 +2,8 @@ spring:
   application:
     name: product-service
   profiles:
-    active: @spring.profiles.active@
+    active: dev
+#    active: @spring.profiles.active@
 
 server:
   port: 9095

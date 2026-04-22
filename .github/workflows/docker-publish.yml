@@ -41,7 +41,7 @@ jobs:
             -Pprod \
             -Dsonar.projectKey=spring-ci-cd-github-action \
             -Dsonar.projectName='Spring Product Service' \
-            -Dsonar.host.url=https://sonarcloud.io
+            -Dsonar.host.url=https://stonework-another-clambake.ngrok-free.dev
 
       # 3. Setup Docker (Buildx)
       - name: Set up Docker Buildx

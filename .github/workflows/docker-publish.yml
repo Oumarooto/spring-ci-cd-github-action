@@ -41,7 +41,8 @@ jobs:
             -Dsonar.projectKey=spring-ci-cd-github-action \
             -Dsonar.projectName='spring-ci-cd-github-action' \
             -Dsonar.host.url=https://stonework-another-clambake.ngrok-free.dev \
-            -Dsonar.token=sqp_e337579a9806ba24c7ecdb8c00106ea925712ff2
+            -Dsonar.token=$SONAR_TOKEN
+#            -Dsonar.token=sqp_e337579a9806ba24c7ecdb8c00106ea925712ff2
 
       # 3. Setup Docker (Buildx)
       - name: Set up Docker Buildx

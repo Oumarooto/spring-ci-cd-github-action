@@ -15,7 +15,7 @@ public class ProductDTO {
     @Schema(description = "Identifiant unique du produit", example = "1")
     private Long id;
 
-    @Schema(description = "Nom du produit", example = "Ordinateur Portable", required = true)
+    @Schema(description = "Nom du produit", example = "Ordinateur Portable")
     private String name;
 
     @Schema(description = "Description du produit", example = "")
